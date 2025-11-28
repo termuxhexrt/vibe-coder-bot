@@ -12,14 +12,43 @@ serve(async (req) => {
   }
 
   try {
+    // Get auth token from header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { messages, fileTree } = await req.json();
+    
+    // Input validation
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate message structure and sanitize
+    const sanitizedMessages = messages.slice(-20).map(msg => {
+      if (!msg.role || !msg.content) {
+        throw new Error('Invalid message structure');
+      }
+      return {
+        role: msg.role === 'user' || msg.role === 'assistant' ? msg.role : 'user',
+        content: String(msg.content).slice(0, 10000), // Limit content length
+      };
+    });
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    console.log('Processing agent request with', messages.length, 'messages');
+    console.log('Processing agent request with', sanitizedMessages.length, 'messages');
 
     // System prompt for the AI agent
     const systemPrompt = `You are an expert AI coding agent similar to Replit Agent. You help users build software by:
@@ -53,7 +82,7 @@ Be conversational, helpful, and proactive. Ask clarifying questions when needed.
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          ...messages
+          ...sanitizedMessages
         ],
         temperature: 0.7,
         max_tokens: 2000,
