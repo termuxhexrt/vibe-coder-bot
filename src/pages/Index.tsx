@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 import FileExplorer from "@/components/ide/FileExplorer";
 import CodeEditor from "@/components/ide/CodeEditor";
 import AgentChat from "@/components/ide/AgentChat";
 import Terminal from "@/components/ide/Terminal";
+import { LogOut } from "lucide-react";
 
 export interface FileNode {
   name: string;
@@ -14,6 +19,41 @@ export interface FileNode {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Check authentication
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setUser(session.user);
+      }
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        navigate("/auth");
+      } else if (session) {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+  };
+
   const [fileTree, setFileTree] = useState<FileNode[]>([
     {
       name: "src",
@@ -96,44 +136,33 @@ const Index = () => {
   const handleExecuteCode = () => {
     if (!activeFile || activeFile.type !== "file") return;
 
-    try {
-      const logs: string[] = [];
-      const originalLog = console.log;
-      console.log = (...args: any[]) => {
-        logs.push(args.join(" "));
-        originalLog(...args);
-      };
-
-      if (activeFile.path.endsWith(".js")) {
-        eval(activeFile.content || "");
-      }
-
-      console.log = originalLog;
-      setTerminalOutput([
-        ...terminalOutput,
-        `\n> Executing ${activeFile.name}...`,
-        ...logs,
-        "Execution complete.",
-      ]);
-    } catch (error: any) {
-      setTerminalOutput([
-        ...terminalOutput,
-        `\n> Error executing ${activeFile.name}:`,
-        error.message,
-      ]);
-    }
+    setTerminalOutput([
+      ...terminalOutput,
+      `\n> Code execution has been disabled for security reasons.`,
+      "Please use the AI agent to help you test and run your code.",
+    ]);
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-screen bg-background flex flex-col">
       <header className="h-12 border-b border-border flex items-center px-4 bg-card">
         <h1 className="text-lg font-semibold">VibeCode AI</h1>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex gap-2 items-center">
+          <span className="text-sm text-muted-foreground">{user?.email}</span>
           <button
-            onClick={handleExecuteCode}
-            className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
+            onClick={handleLogout}
+            className="px-3 py-1 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 flex items-center gap-2"
           >
-            Run Code
+            <LogOut className="h-4 w-4" />
+            Logout
           </button>
         </div>
       </header>
