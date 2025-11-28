@@ -14,7 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agent_sessions: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          id: string
+          messages: Json | null
+          project_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          project_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          project_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_sessions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execution_logs: {
+        Row: {
+          error: string | null
+          executed_at: string | null
+          file_path: string
+          id: string
+          output: string | null
+          project_id: string | null
+          status: string
+        }
+        Insert: {
+          error?: string | null
+          executed_at?: string | null
+          file_path: string
+          id?: string
+          output?: string | null
+          project_id?: string | null
+          status: string
+        }
+        Update: {
+          error?: string | null
+          executed_at?: string | null
+          file_path?: string
+          id?: string
+          output?: string | null
+          project_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_files: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          name: string
+          parent_path: string | null
+          path: string
+          project_id: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          parent_path?: string | null
+          path: string
+          project_id?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          parent_path?: string | null
+          path?: string
+          project_id?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
